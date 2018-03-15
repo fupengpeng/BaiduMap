@@ -167,10 +167,24 @@
         android:background="#ffaa00"
         android:layout_width="match_parent"
         android:layout_height="1dp"/>
-    <com.baidu.mapapi.map.TextureMapView
-        android:id="@+id/bmapView"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:clickable="true" />
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <com.baidu.mapapi.map.TextureMapView
+            android:id="@+id/bmapView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clickable="true" />
+        <ImageView
+            android:id="@+id/iv_atvt_main_location"
+            android:src="@drawable/usercenter_address_location"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_alignParentBottom="true"
+            android:layout_marginLeft="10dp"
+            android:layout_marginBottom="40dp" />
+    </RelativeLayout>
+
+
 
 </LinearLayout>

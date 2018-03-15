@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -98,6 +99,9 @@ public class MainActivity extends AppCompatActivity implements BDLocationListene
     private boolean isFirstLoc = true;
     //
     private LocationClient mLocationClient;
+    private ImageView mIvAtvtMain;
+    private MapStatus.Builder builder;
+    private LatLng latLng;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -164,6 +168,8 @@ public class MainActivity extends AppCompatActivity implements BDLocationListene
     private void initView() {
         //获取地图控件引用
         mMapView = (TextureMapView) findViewById(R.id.bmapView);
+
+        mIvAtvtMain = (ImageView) findViewById(R.id.iv_atvt_main_location);
         Log.e(TAG, "onViewClicked: 点击定位");
         tvAtvtMainCommon.setOnCheckedChangeListener(onCheckedChangeListener);
         tvAtvtMainSatellite.setOnCheckedChangeListener(onCheckedChangeListener);
@@ -276,13 +282,17 @@ public class MainActivity extends AppCompatActivity implements BDLocationListene
 
 
 
-    @OnClick({ R.id.tv_atvt_main_heating_power1})
+    @OnClick({ R.id.tv_atvt_main_heating_power1,R.id.iv_atvt_main_location})
     public void onViewClicked(View view) {
         switch (view.getId()) {
             case R.id.tv_atvt_main_heating_power1:
                 Intent intent = new Intent(MainActivity.this, NavigationActivity.class);
                 startActivity(intent);
                 break;
+            case R.id.iv_atvt_main_location:
+                mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
+                break;
+
         }
     }
 
@@ -311,9 +321,9 @@ public class MainActivity extends AppCompatActivity implements BDLocationListene
                 longitude = location.getLongitude();
 
 
-                LatLng ll = new LatLng(latitude, longitude);
-                MapStatus.Builder builder = new MapStatus.Builder();
-                builder.target(ll).zoom(18.0f);
+                latLng = new LatLng(latitude, longitude);
+                builder = new MapStatus.Builder();
+                builder.target(latLng).zoom(18.0f);
                 mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
 
                 Toast.makeText(MainActivity.this, "当前所在位置：" + location.getAddrStr(), Toast.LENGTH_LONG).show();
@@ -342,15 +352,6 @@ public class MainActivity extends AppCompatActivity implements BDLocationListene
         locationListener();
         // 开启定位
         mLocationClient.start();
-
-        // 构造定位数据
-//        MyLocationData locData = new MyLocationData.Builder()
-//                .accuracy(location.getRadius())
-//                // 此处设置开发者获取到的方向信息，顺时针0-360
-//                .direction(100).latitude(location.getLatitude())
-//                .longitude(location.getLongitude()).build();
-//        // 设置定位数据
-//        mBaiduMap.setMyLocationData(locData);
 
         // 当不需要定位图层时关闭定位图层
 //                mBaiduMap.setMyLocationEnabled(false);
@@ -382,31 +383,20 @@ public class MainActivity extends AppCompatActivity implements BDLocationListene
 
     private void locationState() {
         // 设置定位图层的配置（定位模式，是否允许方向信息，用户自定义定位图标）
-//        mCurrentMarker = BitmapDescriptorFactory
-//                .fromResource(R.drawable.ic_gps_not_fixed_black_24dp);
-        //定位跟随态
-        mCurrentMode = MyLocationConfiguration.LocationMode.FOLLOWING;
-        final MyLocationConfiguration config = new MyLocationConfiguration(mCurrentMode, true, mCurrentMarker);
-        mBaiduMap.setMyLocationConfiguration(config);
-
-    }
-
-
-    private void locationView() {
-
+        // 定位显示图标
         mCurrentMarker = BitmapDescriptorFactory.fromResource(R.drawable.ic_gps_not_fixed_black_24dp);
+        // 定位显示方式：跟随，罗盘，默认
+        mCurrentMode = MyLocationConfiguration.LocationMode.FOLLOWING;
         int accuracyCircleFillColor = 0xAAFFFF88;//自定义精度圈填充颜色
         int accuracyCircleStrokeColor = 0xAA00FF00;//自定义精度圈边框颜色
-        mBaiduMap.setMyLocationConfiguration(new
-                MyLocationConfiguration(
-                mCurrentMode, true, mCurrentMarker,
-                accuracyCircleFillColor, accuracyCircleStrokeColor));
+        final MyLocationConfiguration config = new MyLocationConfiguration(mCurrentMode, true,
+                mCurrentMarker,accuracyCircleFillColor, accuracyCircleStrokeColor);
+        mBaiduMap.setMyLocationConfiguration(config);
 
 
         /*
 
         用于设置定位的属性，包括定位模式、是否开启方向、设置自定义定位图标、精度圈填充颜色，精度圈边框颜色。更详细信息，请检索类参考。
-
 
         1.定位模式
             地图SDK支持三种定位模式：NORMAL（普通态）, FOLLOWING（跟随态）, COMPASS（罗盘态）
@@ -436,17 +426,12 @@ public class MainActivity extends AppCompatActivity implements BDLocationListene
                 mCurrentMode, true,mCurrentMarker,
                 accuracyCircleFillColor, accuracyCircleStrokeColor));
             */
+        //定位跟随态
 
 
-    }
-
-    public void initLocationClient() {
 
     }
 
-    public void initLocationClientOption() {
-
-    }
 
 
     private void locationConfig() {
