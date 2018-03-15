@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--<item android:state_checked="true" android:drawable="@drawable/order_waiter_selected" />
+    <item android:state_selected="true" android:drawable="@drawable/order_waiter_selected"></item>
+    <item android:state_pressed="true" android:drawable="@drawable/order_waiter_selected"></item>
+    <item android:state_checked="false" android:drawable="@drawable/ic_radio_button_unchecked_black_24dp" />-->
+
+    <item android:drawable="@drawable/ic_order_anything_check_24dp" android:state_checked="false"></item>
+    <item android:drawable="@drawable/ic_order_select_waiter_24dp" android:state_checked="true"></item>
+</selector>
