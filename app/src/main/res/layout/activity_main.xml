@@ -12,79 +12,85 @@
         android:orientation="horizontal">
 
         <CheckBox
-            android:id="@+id/tv_atvt_main_common"
-            android:gravity="center"
-            android:text="普通"
-            android:layout_weight="1"
-            android:layout_width="0dp"
+            android:id="@+id/cb_atvt_main_common"
             style="@style/circlecheckbox"
+
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
             android:scaleX="0.9"
             android:scaleY="0.9"
-            android:layout_height="match_parent" />
+            android:text="空空" />
+
         <View
-            android:background="#ffaa00"
             android:layout_width="1dp"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent"
+            android:background="#ffaa00" />
 
 
         <CheckBox
-            android:id="@+id/tv_atvt_main_satellite"
-            android:gravity="center"
-            android:text="卫星"
-            android:layout_weight="1"
-            android:layout_width="0dp"
+            android:id="@+id/cb_atvt_main_satellite"
             style="@style/circlecheckbox"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
             android:scaleX="0.9"
             android:scaleY="0.9"
-            android:layout_height="match_parent" />
+            android:text="卫星" />
+
         <View
-            android:background="#ffaa00"
             android:layout_width="1dp"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent"
+            android:background="#ffaa00" />
 
 
         <CheckBox
-            android:id="@+id/tv_atvt_main_empty"
-            android:gravity="center"
-            android:text="交通"
-            android:layout_weight="1"
-            android:layout_width="0dp"
+            android:id="@+id/cb_atvt_main_empty"
             style="@style/circlecheckbox"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
             android:scaleX="0.9"
             android:scaleY="0.9"
-            android:layout_height="match_parent" />
+            android:text="交通" />
+
         <View
-            android:background="#ffaa00"
             android:layout_width="1dp"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent"
+            android:background="#ffaa00" />
 
         <CheckBox
-            android:id="@+id/tv_atvt_main_traffic"
-            android:text="热力"
-            android:gravity="center"
-            android:layout_weight="1"
-            android:layout_width="0dp"
+            android:id="@+id/cb_atvt_main_traffic"
             style="@style/circlecheckbox"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
             android:scaleX="0.9"
             android:scaleY="0.9"
-            android:layout_height="match_parent" />
+            android:text="热力" />
+
         <View
-            android:background="#ffaa00"
             android:layout_width="1dp"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent"
+            android:background="#ffaa00" />
         <CheckBox
-            android:id="@+id/tv_atvt_main_heating_power"
-            android:text="3D？"
-            android:gravity="center"
-            android:layout_weight="1"
-            android:layout_width="0dp"
+            android:id="@+id/cb_atvt_main_location"
             style="@style/circlecheckbox"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
             android:scaleX="0.9"
             android:scaleY="0.9"
-            android:layout_height="match_parent" />
+            android:text="定位" />
 
 
     </LinearLayout>
+
     <View
         android:background="#ffaa00"
         android:layout_width="match_parent"
@@ -96,7 +102,7 @@
 
 
         <CheckBox
-            android:id="@+id/tv_atvt_main_normal"
+            android:id="@+id/cb_atvt_main_normal"
             android:gravity="center"
             android:text="跟随"
             android:layout_weight="1"
@@ -111,7 +117,7 @@
             android:layout_height="match_parent"/>
 
         <CheckBox
-            android:id="@+id/tv_atvt_main_following"
+            android:id="@+id/cb_atvt_main_following"
             android:gravity="center"
             android:text="罗盘"
             android:layout_weight="1"
@@ -126,23 +132,10 @@
             android:layout_height="match_parent"/>
 
         <CheckBox
-            android:id="@+id/tv_atvt_main_compass"
+            android:id="@+id/cb_atvt_main_compass"
+            android:visibility="visible"
             android:gravity="center"
-            android:text="普通"
-            android:layout_weight="1"
-            android:layout_width="0dp"
-            style="@style/circlecheckbox"
-            android:scaleX="0.9"
-            android:scaleY="0.9"
-            android:layout_height="match_parent" />
-        <View
-            android:background="#ffaa00"
-            android:layout_width="1dp"
-            android:layout_height="match_parent"/>
-        <CheckBox
-            android:id="@+id/tv_atvt_main_traffic1"
-            android:gravity="center"
-            android:text="普通"
+            android:text="室内"
             android:layout_weight="1"
             android:layout_width="0dp"
             style="@style/circlecheckbox"
@@ -154,12 +147,106 @@
             android:layout_width="1dp"
             android:layout_height="match_parent"/>
         <TextView
-            android:id="@+id/tv_atvt_main_heating_power1"
+            android:id="@+id/tv_atvt_main_traffic1"
+            android:visibility="visible"
+            android:gravity="center"
+            android:text="old"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            style="@style/circlecheckbox"
+            android:scaleX="0.9"
+            android:scaleY="0.9"
+            android:layout_height="match_parent" />
+        <View
+            android:background="#ffaa00"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"/>
+        <TextView
+            android:id="@+id/tv_atvt_main_heating_power"
             android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:gravity="center"
-            android:text="结束定位" />
+            android:text="跳转" />
+
+
+    </LinearLayout>
+    <View
+        android:background="#ffaa00"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:orientation="horizontal">
+
+
+        <TextView
+            android:id="@+id/tv_atvt_main_one"
+            android:gravity="center"
+            android:text="One"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            style="@style/circlecheckbox"
+            android:scaleX="0.9"
+            android:scaleY="0.9"
+            android:layout_height="match_parent" />
+        <View
+            android:background="#ffaa00"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"/>
+
+        <TextView
+            android:id="@+id/tv_atvt_main_two"
+            android:gravity="center"
+            android:text="home"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            style="@style/circlecheckbox"
+            android:scaleX="0.9"
+            android:scaleY="0.9"
+            android:layout_height="match_parent" />
+        <View
+            android:background="#ffaa00"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"/>
+
+        <TextView
+            android:id="@+id/tv_atvt_main_three"
+            android:visibility="visible"
+            android:gravity="center"
+            android:text="Three"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            style="@style/circlecheckbox"
+            android:scaleX="0.9"
+            android:scaleY="0.9"
+            android:layout_height="match_parent" />
+        <View
+            android:background="#ffaa00"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"/>
+        <TextView
+            android:id="@+id/tv_atvt_main_four"
+            android:gravity="center"
+            android:text="Four"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            style="@style/circlecheckbox"
+            android:scaleX="0.9"
+            android:scaleY="0.9"
+            android:layout_height="match_parent" />
+        <View
+            android:background="#ffaa00"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"/>
+        <TextView
+            android:id="@+id/tv_atvt_main_heating_five"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="Five" />
 
 
     </LinearLayout>
