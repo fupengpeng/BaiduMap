@@ -3,8 +3,10 @@ package com.fpp.baidumap;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -20,6 +22,7 @@ import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
 import com.baidu.mapapi.SDKInitializer;
+import com.baidu.mapapi.map.ArcOptions;
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.BitmapDescriptor;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
@@ -28,6 +31,7 @@ import com.baidu.mapapi.map.InfoWindow;
 import com.baidu.mapapi.map.MapBaseIndoorMapInfo;
 import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapStatus;
+import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.map.MarkerOptions;
@@ -41,7 +45,19 @@ import com.baidu.mapapi.map.Stroke;
 import com.baidu.mapapi.map.TextOptions;
 import com.baidu.mapapi.map.TextureMapView;
 import com.baidu.mapapi.model.LatLng;
+import com.baidu.mapapi.search.geocode.GeoCodeResult;
+import com.baidu.mapapi.search.geocode.GeoCoder;
+import com.baidu.mapapi.search.geocode.OnGetGeoCoderResultListener;
+import com.baidu.mapapi.search.geocode.ReverseGeoCodeOption;
+import com.baidu.mapapi.search.geocode.ReverseGeoCodeResult;
+import com.baidu.mapapi.search.poi.OnGetPoiSearchResultListener;
+import com.baidu.mapapi.search.poi.PoiCitySearchOption;
+import com.baidu.mapapi.search.poi.PoiDetailResult;
+import com.baidu.mapapi.search.poi.PoiIndoorResult;
+import com.baidu.mapapi.search.poi.PoiResult;
+import com.baidu.mapapi.search.poi.PoiSearch;
 import com.fpp.baidumap.activity.NavigationActivity;
+import com.fpp.baidumap.activity.OverlayDemoActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -91,6 +107,8 @@ public class MainActivity extends AppCompatActivity
     ImageView ivAtvtMainLocation;
     @BindView(R.id.cb_atvt_main_location)
     CheckBox cbAtvtMainLocation;
+    @BindView(R.id.iv_atvt_main_assign_location)
+    ImageView ivAtvtMainAssignLocation;
 
 
     private TextureMapView mMapView = null;
@@ -120,6 +138,16 @@ public class MainActivity extends AppCompatActivity
     private MapStatus.Builder builder;
     private LatLng latLng;
     private LatLng latLngLocation;
+    private Marker marker;
+    private ReverseGeoCodeOption reverseGeoCodeOption;
+    private OnGetGeoCoderResultListener onGetGeoCoderResultListener;
+
+
+    private boolean mPopupWindowState = false;
+    private static final int MAP_STATE_ALL = 1;
+    private static final int MAP_STATE_NORMAL = 2;
+    private static final int MAP_STATE_POPUP_WINDOW_SHOU = 3;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -130,13 +158,23 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
+
+        // 状态栏标识颜色变黑，布局填充状态栏，设置透明
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            View decorView = getWindow().getDecorView();
+            int option = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;  // 状态栏标识颜色变黑
+            decorView.setSystemUiVisibility(option);
+            getWindow().setStatusBarColor(Color.TRANSPARENT);//透明状态栏
+        }
+
         // 初始化View
         initView();
         // 显示地图
         showMap();
         // 定位相关（定位到当前位置）
         locationMap();
-
         // 室内地图相关
         indoorMap();
         // 地图上绘制点标记
@@ -147,16 +185,48 @@ public class MainActivity extends AppCompatActivity
         drawLine();
         // 地图上绘制面
         drawPlane();
-
-        // 添加文字
+        // 地图上绘制文字
         addText();
-
+        // 地图poi检索
+        poiSearch();
 
     }
 
+    // 地图poi检索
+    private void poiSearch() {
+        // 1.创建POI检索实例
+        PoiSearch mPoiSearch = PoiSearch.newInstance();
+        // 2.创建POI检索监听者；
+        OnGetPoiSearchResultListener poiListener = new OnGetPoiSearchResultListener(){
+            @Override
+            public void onGetPoiResult(PoiResult poiResult) {
+                //获取POI检索结果
+                Log.e("onGetPoiResult","POI检索结果  poiResult = " + poiResult);
+            }
 
+            @Override
+            public void onGetPoiDetailResult(PoiDetailResult poiDetailResult) {
+                //获取Place详情页检索结果
+                Log.e("onGetPoiDetailResult","Place详情页检索结果  poiDetailResult = " + poiDetailResult);
+            }
 
+            @Override
+            public void onGetPoiIndoorResult(PoiIndoorResult poiIndoorResult) {
+                Log.e("onGetPoiIndoorResult","Indoor POI检索结果  poiIndoorResult = " + poiIndoorResult);
+            }
+        };
+        // 3.设置POI检索监听者；
+        mPoiSearch.setOnGetPoiSearchResultListener(poiListener);
+        // 4.发起检索请求；
+        mPoiSearch.searchInCity((new PoiCitySearchOption())
+                .city("北京")
+                .keyword("美食")
+                .pageNum(10));
+        // 5.释放POI检索实例；
+        mPoiSearch.destroy();
+    }
 
+    // 地图上绘制文字
     private void addText() {
 
         //定义文字所显示的坐标点
@@ -167,7 +237,7 @@ public class MainActivity extends AppCompatActivity
                 .bgColor(0xAAFFFF00)  // 背景色
                 .fontSize(24)         // 文字大小
                 .fontColor(0xFFFF00FF)  // 文字颜色
-                .text("百度地图SDK")  // 文字内容
+                .text("绘制文字")  // 文字内容
                 .rotate(-30)          // 文字旋转角度
                 .position(llText);    // 文字显示位置
 
@@ -193,9 +263,9 @@ public class MainActivity extends AppCompatActivity
 
 
     }
-
+    // 地图上绘制面
     private void drawPlane() {
-        // 绘制圆
+        // TODO: 2018/3/27 0027 绘制圆
         LatLng llCircle = new LatLng(39.90923, 116.447428);
         Stroke stroke = new Stroke(5, 0xAA000000);
         OverlayOptions ooCircle = new CircleOptions().fillColor(0x000000FF).center(llCircle).stroke(stroke).radius(1400);
@@ -203,6 +273,7 @@ public class MainActivity extends AppCompatActivity
         mBaiduMap.addOverlay(ooCircle);
 
 
+        // TODO: 2018/3/27 0027 绘制多边形 
         //定义多边形的五个顶点
         LatLng pt1 = new LatLng(39.93923, 116.357428);
         LatLng pt2 = new LatLng(39.91923, 116.327428);
@@ -227,16 +298,28 @@ public class MainActivity extends AppCompatActivity
 
 
     }
-
+    // 地图上绘制线
     private void drawLine() {
-        //构建折线点坐标
+
         LatLng p1 = new LatLng(39.97923, 116.357428);
-        LatLng p2 = new LatLng(36.94923, 113.397428);
-        LatLng p3 = new LatLng(33.97923, 119.437428);
+        LatLng p2 = new LatLng(39.94923, 116.397428);
+        LatLng p3 = new LatLng(39.97923, 116.437428);
+        OverlayOptions ooArc = new ArcOptions()
+                .color(0xAA00FF00)
+                .width(4)//设置颜色和透明度，均使用16进制显示，0xAARRGGBB，如 0xAA00FF00 其中AA是透明度，00FF00为颜色
+                .points(p1, p2, p3);
+        mBaiduMap.addOverlay(ooArc);
+
+
+        // TODO: 2018/3/27 0027 绘制多段线 
+        //构建折线点坐标
+        LatLng p4 = new LatLng(39.97923, 116.357428);
+        LatLng p5 = new LatLng(36.94923, 113.397428);
+        LatLng p6 = new LatLng(33.97923, 119.437428);
         List<LatLng> points = new ArrayList<LatLng>();
-        points.add(p1);
-        points.add(p2);
-        points.add(p3);
+        points.add(p4);
+        points.add(p5);
+        points.add(p6);
 
         //绘制折线
         OverlayOptions ooPolyline = new PolylineOptions().width(10)
@@ -246,8 +329,8 @@ public class MainActivity extends AppCompatActivity
 //        mPolyline.setDottedLine(true);   //设置是否虚线绘制
 
 
+        // TODO: 2018/3/27 0027 绘制多段分色线 
         // 构造折线点坐标
-
         List<LatLng> pointss = new ArrayList<LatLng>();
         pointss.add(new LatLng(39.965, 116.404));
         pointss.add(new LatLng(39.925, 116.454));
@@ -256,7 +339,6 @@ public class MainActivity extends AppCompatActivity
         pointss.add(new LatLng(39.965, 116.604));
 
         //构建分段颜色索引数组
-
         List<Integer> colors = new ArrayList<>();
         colors.add(Integer.valueOf(Color.BLUE));
         colors.add(Integer.valueOf(Color.RED));
@@ -271,17 +353,36 @@ public class MainActivity extends AppCompatActivity
 
 
     }
-
+    // 地图事件
     private void mapEvent() {
 
 
-        BaiduMap.OnMapClickListener listener = new BaiduMap.OnMapClickListener() {
+        // TODO: 2018/3/27 0027 地图单击事件 
+        mBaiduMap.setOnMapClickListener(new BaiduMap.OnMapClickListener() {
             /**
              * 地图单击事件回调函数
              * @param point 点击的地理坐标
              */
             public void onMapClick(LatLng point) {
                 Log.e("onMapClick", "获取到点击坐标 = " + point);
+
+                // 添加地图标点
+                // 定义Maker坐标点
+                LatLng point0 = new LatLng(32.29505308631754, 105.95935596520927);
+                OverlayOptions ooa = new MarkerOptions()
+                        .position(point0)         // 位置
+                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_location_blue))  // 图标
+                        .zIndex(1)        // 设置Marker所在层级
+                        .draggable(true)  // 是否可拖拽
+                        .alpha(0.5f)      // 透明度
+                        .perspective(true)  //   是否开启近大远小效果
+                        .visible(true)      // 是否显示
+                        .title("动态定位")  // 标题
+                        .animateType(MarkerOptions.MarkerAnimateType.drop);  // 添加掉下动画
+
+                marker = (Marker) mBaiduMap.addOverlay(ooa);
+                MapStatusUpdate u = MapStatusUpdateFactory.newLatLngZoom(point0,17.0f);
+                mBaiduMap.animateMapStatus(u);
 
             }
 
@@ -291,15 +392,31 @@ public class MainActivity extends AppCompatActivity
              */
             public boolean onMapPoiClick(MapPoi poi) {
                 Log.e("onMapPoiClick", " name = " + poi.getName()
-                 + "   uid = " + poi.getUid() + "   latlng = " + poi.getPosition());
+                        + "   uid = " + poi.getUid() + "   latlng = " + poi.getPosition());
+                // 添加地图标点
+                // 定义Maker坐标点
+                LatLng point0 = poi.getPosition();
+                OverlayOptions ooa = new MarkerOptions()
+                        .position(point0)         // 位置
+                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_location_green))  // 图标
+                        .zIndex(1)        // 设置Marker所在层级
+                        .draggable(true)  // 是否可拖拽
+                        .alpha(1.0f)      // 透明度
+                        .perspective(true)  //   是否开启近大远小效果
+                        .visible(true)      // 是否显示
+                        .title(poi.getName())  // 标题
+                        .animateType(MarkerOptions.MarkerAnimateType.grow);  // 添加冒出动画
+
+                marker = (Marker) mBaiduMap.addOverlay(ooa);
+
+
                 return true;
             }
-        };
-
-        mBaiduMap.setOnMapClickListener(listener);
+        });
 
 
-        BaiduMap.OnMarkerClickListener onMarkerClickListener = new BaiduMap.OnMarkerClickListener() {
+        // TODO: 2018/3/27 0027 覆盖物单击事件 
+        mBaiduMap.setOnMarkerClickListener(new BaiduMap.OnMarkerClickListener() {
             /**
              * 地图 Marker 覆盖物点击事件监听函数
              * @param marker 被点击的 marker
@@ -308,11 +425,9 @@ public class MainActivity extends AppCompatActivity
                 Log.e("onMarkerClick", "覆盖物点击事件监听 = " + marker);
                 return false;
             }
-        };
-        mBaiduMap.setOnMarkerClickListener(onMarkerClickListener);
-
-
-        BaiduMap.OnMyLocationClickListener onMyLocationClickListener = new BaiduMap.OnMyLocationClickListener() {
+        });
+        // TODO: 2018/3/27 0027 地图定位点点击事件
+        mBaiduMap.setOnMyLocationClickListener(new BaiduMap.OnMyLocationClickListener() {
             /**
              * 地图定位图标点击事件监听函数
              */
@@ -320,8 +435,7 @@ public class MainActivity extends AppCompatActivity
                 Log.e("onMyLocationClick", "定位图标点击事件");
                 return false;
             }
-        };
-        mBaiduMap.setOnMyLocationClickListener(onMyLocationClickListener);
+        });
 
         BaiduMap.SnapshotReadyCallback callback = new BaiduMap.SnapshotReadyCallback() {
             /**
@@ -332,6 +446,7 @@ public class MainActivity extends AppCompatActivity
                 Log.e("onSnapshotReady", "地图截屏回调接口 = " + snapshot);
             }
         };
+
 
         mBaiduMap.setOnMapDrawFrameCallback(new BaiduMap.OnMapDrawFrameCallback() {
             @Override
@@ -345,6 +460,7 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        // TODO: 2018/3/27 0027 地图触摸事件 
         mBaiduMap.setOnMapTouchListener(new BaiduMap.OnMapTouchListener() {
             /**
              * 当用户触摸地图时回调函数
@@ -355,6 +471,7 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        // TODO: 2018/3/27 0027 地图长按事件 
         mBaiduMap.setOnMapLongClickListener(new BaiduMap.OnMapLongClickListener() {
             @Override
             public void onMapLongClick(LatLng latLng) {
@@ -362,6 +479,7 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        // TODO: 2018/3/27 0027 ？？？ 
         mBaiduMap.setOnPolylineClickListener(new BaiduMap.OnPolylineClickListener() {
             @Override
             public boolean onPolylineClick(Polyline polyline) {
@@ -369,42 +487,170 @@ public class MainActivity extends AppCompatActivity
                 return false;
             }
         });
+        // TODO: 2018/3/27 0027 地图滑动监听 
+        mBaiduMap.setOnMapStatusChangeListener(new BaiduMap.OnMapStatusChangeListener() {
+            @Override
+            public void onMapStatusChangeStart(MapStatus mapStatus) {
+            }
+
+            @Override
+            public void onMapStatusChangeStart(MapStatus mapStatus, int i) {
+                Log.e("onMapStatusChangeStart","地图滑动开始 + 2    mapStatus = " + mapStatus  + "    i = " + i);
+            }
+
+            @Override
+            public void onMapStatusChange(MapStatus mapStatus) {
+
+            }
+
+            @Override
+            public void onMapStatusChangeFinish(MapStatus mapStatus) {
+                GeoCoder geoCoder = GeoCoder.newInstance();
+                marker.setPosition(mapStatus.target);
+                reverseGeoCodeOption = new ReverseGeoCodeOption().location(mapStatus.target);
+                geoCoder.reverseGeoCode(reverseGeoCodeOption);
+                onGetGeoCoderResultListener = new OnGetGeoCoderResultListener() {
+                    @Override
+                    public void onGetGeoCodeResult(GeoCodeResult geoCodeResult) {
+
+                    }
+
+                    @Override
+                    public void onGetReverseGeoCodeResult(ReverseGeoCodeResult reverseGeoCodeResult) {
+                        String address = reverseGeoCodeResult.getAddress();
+                        if (!TextUtils.isEmpty(address)){
+                            latLng = reverseGeoCodeResult.getLocation();
+                            String sendAddress = address;
+                            Log.e("onGetReverseGeoCodeResult","地图滑动完成    sendLatLng = " + latLng  + "      address = " + address );
+
+                            return;
+                        }else {
+                            Log.e("onGetReverseGeoCodeResult","地图滑动完成    获取地址失败"  );
+                        }
+                    }
+                };
+                geoCoder.setOnGetGeoCodeResultListener(onGetGeoCoderResultListener);
+                Log.e("onMapStatusChangeFinish","地图滑动完成    mapStatus = " + mapStatus );
+            }
+        });
+
+
+        // TODO: 2018/3/27 0027 地图上覆盖物拖拽的监听
+        mBaiduMap.setOnMarkerDragListener(new BaiduMap.OnMarkerDragListener() {
+            public void onMarkerDrag(Marker marker) {
+                //拖拽中
+                Log.e("onMarkerDrag", "拖拽中  marker = " + marker);
+            }
+            public void onMarkerDragEnd(Marker marker) {
+                //拖拽结束
+                Log.e("onMarkerDragEnd", "拖拽结束  marker = " + marker);
+            }
+            public void onMarkerDragStart(Marker marker) {
+                //开始拖拽
+                Log.e("onMarkerDragStart", "开始拖拽  marker = " + marker);
+            }
+        });
+
+
+
 
 
     }
-
+    // 地图上绘制点标记
     private void dotMark() {
         //定义Maker坐标点
-        LatLng point = new LatLng(34.29505308631754, 108.95935596520927);
-
+        LatLng point = new LatLng(33.95670159951895, 107.76964913084957);
         //构建Marker图标
         BitmapDescriptor bitmap = BitmapDescriptorFactory
-                .fromResource(R.drawable.icon_mark_home);
-
+                .fromResource(R.drawable.icon_location_red);
         //构建MarkerOption，用于在地图上添加Marker
         OverlayOptions option = new MarkerOptions()
                 .position(point)
-                .icon(bitmap);
-
+                .icon(bitmap)
+                .title("太白山");
         //在地图上添加Marker，并显示
         mBaiduMap.addOverlay(option);
 
-        //定义Maker坐标点
-        point = new LatLng(33.96354354336201, 108.31716633918114);
 
+
+        //定义Maker坐标点
+        point = new LatLng(34.48498948836416,110.09315226462795);
         //构建Marker图标
         bitmap = BitmapDescriptorFactory
-                .fromResource(R.drawable.icon_mark_old_home);
-
+                .fromResource(R.drawable.icon_location_red);
         //构建MarkerOption，用于在地图上添加Marker
         option = new MarkerOptions()
                 .position(point)
-                .icon(bitmap);
+                .icon(bitmap)
+                .title("华山");
         mBaiduMap.addOverlay(option);
 
 
-    }
+        // 添加地图标点
+        // 定义Maker坐标点
+        LatLng point0 = new LatLng(32.29505308631754, 105.95935596520927);
+        OverlayOptions ooa = new MarkerOptions()
+                .position(point0)         // 位置
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_location_blue))  // 图标
+                .zIndex(1)        // 设置Marker所在层级
+                .draggable(true)  // 是否可拖拽
+                .alpha(0.5f)      // 透明度
+                .perspective(true)  //   是否开启近大远小效果
+                .visible(true)      // 是否显示
+                .title("动态定位")  // 标题
+                .animateType(MarkerOptions.MarkerAnimateType.drop);  // 添加掉下动画
 
+        marker = (Marker) mBaiduMap.addOverlay(ooa);
+        MapStatusUpdate u = MapStatusUpdateFactory.newLatLngZoom(point0,17.0f);
+        mBaiduMap.animateMapStatus(u);
+
+
+
+        // 批量添加地图标点
+        //创建OverlayOptions的集合
+        List<OverlayOptions> options = new ArrayList<OverlayOptions>();
+        //设置坐标点
+        LatLng point1 = new LatLng(39.92235, 116.380338);
+        LatLng point2 = new LatLng(39.947246, 116.414977);
+
+        //创建OverlayOptions属性
+        OverlayOptions option1 =  new MarkerOptions()
+                .position(point1)
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_location_red));
+        OverlayOptions option2 =  new MarkerOptions()
+                .position(point2)
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_location_green));
+        //将OverlayOptions添加到list
+        options.add(option1);
+        options.add(option2);
+        //在地图上批量添加
+        mBaiduMap.addOverlays(options);
+
+        // TODO: 2018/3/27 0027 为marker添加动画
+        // 通过Marker的icons设置一组图片，再通过period设置多少帧刷新一次图片资源
+        ArrayList<BitmapDescriptor> giflist = new ArrayList<BitmapDescriptor>();
+
+        giflist.add(BitmapDescriptorFactory.fromResource(R.drawable.icon_location_green));
+        giflist.add(BitmapDescriptorFactory.fromResource(R.drawable.icon_location_red));
+        giflist.add(BitmapDescriptorFactory.fromResource(R.drawable.icon_location_blue));
+
+        OverlayOptions ooD = new MarkerOptions().position(point).icons(giflist)
+                .zIndex(0).period(10);
+
+        marker = (Marker) (mBaiduMap.addOverlay(ooD));
+
+
+        // TODO: 2018/3/27 0027 为marker添加动画 
+        MarkerOptions markerOptions = new MarkerOptions().position(point1).icons(giflist)
+                .zIndex(0).period(10);
+        // 生长动画
+        markerOptions.animateType(MarkerOptions.MarkerAnimateType.grow);
+
+        Marker  mMarkerD = (Marker) (mBaiduMap.addOverlay(markerOptions));
+
+
+    }
+    // 室内地图相关
     private void indoorMap() {
         // 设置监听事件来监听进入和移出室内图：
 
@@ -420,7 +666,6 @@ public class MainActivity extends AppCompatActivity
             }
         });
     }
-
     // 初始化定位并定位到当前位置
     private void locationMap() {
 
@@ -471,13 +716,12 @@ public class MainActivity extends AppCompatActivity
 
 
     }
-
+    // 显示地图
     private void showMap() {
         // 设置地图图层
         mBaiduMap.setMapType(BaiduMap.MAP_TYPE_NORMAL);  // 默认地图（2D，3D ）
     }
-
-
+    // LocationClientOption 配置
     private void initOption() {
         // 定位参数配置
         option = new LocationClientOption();
@@ -489,8 +733,7 @@ public class MainActivity extends AppCompatActivity
         option.setIsNeedAddress(true);// 可选，设置是否需要地址信息，默认不需要
         option.setIsNeedLocationPoiList(true);// 可选，默认false，设置是否需要POI结果，可以在BDLocation.getPoiList里得到
     }
-
-
+    // 初始化View
     private void initView() {
         //获取地图控件引用
         mMapView = (TextureMapView) findViewById(R.id.bmapView);
@@ -592,7 +835,6 @@ public class MainActivity extends AppCompatActivity
                     break;
 
 
-
             }
         }
     };
@@ -639,7 +881,7 @@ public class MainActivity extends AppCompatActivity
 
             case R.id.tv_atvt_main_traffic1:
                 // 移动定位图标至定位点上
-                latLng = new LatLng(33.96354354336201, 108.31716633918114);
+                latLng = new LatLng(33.95670159951895, 107.76964913084957);
                 builder = new MapStatus.Builder();
                 builder.target(latLng).zoom(18.0f);
                 mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
@@ -653,17 +895,33 @@ public class MainActivity extends AppCompatActivity
                 break;
             case R.id.tv_atvt_main_two:
                 // 移动定位图标至定位点上
-                latLng = new LatLng(34.29505308631754, 108.95935596520927);
+                latLng = new LatLng(34.48498948836416,110.09315226462795);
                 builder = new MapStatus.Builder();
                 builder.target(latLng).zoom(18.0f);
                 mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
                 break;
             case R.id.tv_atvt_main_three:
+
+                // 移动定位图标至定位点上
+                latLng = new LatLng(32.29505308631754, 105.95935596520927);
+                builder = new MapStatus.Builder();
+                builder.target(latLng).zoom(18.0f);
+                mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
+
                 break;
             case R.id.tv_atvt_main_four:
+
+                // 移动定位图标至定位点上
+                latLng = new LatLng(32.29505308631754, 105.95935596520927);
+                builder = new MapStatus.Builder();
+                builder.target(latLng).zoom(18.0f);
+                mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
+
+
                 break;
             case R.id.tv_atvt_main_heating_five:
-
+                intent = new Intent(MainActivity.this, OverlayDemoActivity.class);
+                startActivity(intent);
                 break;
 
 

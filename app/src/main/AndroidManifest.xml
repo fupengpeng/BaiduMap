@@ -57,6 +57,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".activity.NavigationActivity"/>
+        <activity android:name=".activity.OverlayDemoActivity"/>
 
         <meta-data
             android:name="com.baidu.lbsapi.API_KEY"
