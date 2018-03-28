@@ -13,6 +13,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -45,17 +46,19 @@ import com.baidu.mapapi.map.Stroke;
 import com.baidu.mapapi.map.TextOptions;
 import com.baidu.mapapi.map.TextureMapView;
 import com.baidu.mapapi.model.LatLng;
+import com.baidu.mapapi.search.core.PoiInfo;
 import com.baidu.mapapi.search.geocode.GeoCodeResult;
 import com.baidu.mapapi.search.geocode.GeoCoder;
 import com.baidu.mapapi.search.geocode.OnGetGeoCoderResultListener;
 import com.baidu.mapapi.search.geocode.ReverseGeoCodeOption;
 import com.baidu.mapapi.search.geocode.ReverseGeoCodeResult;
 import com.baidu.mapapi.search.poi.OnGetPoiSearchResultListener;
-import com.baidu.mapapi.search.poi.PoiCitySearchOption;
 import com.baidu.mapapi.search.poi.PoiDetailResult;
 import com.baidu.mapapi.search.poi.PoiIndoorResult;
+import com.baidu.mapapi.search.poi.PoiNearbySearchOption;
 import com.baidu.mapapi.search.poi.PoiResult;
 import com.baidu.mapapi.search.poi.PoiSearch;
+import com.baidu.mapapi.search.poi.PoiSortType;
 import com.fpp.baidumap.activity.NavigationActivity;
 import com.fpp.baidumap.activity.OverlayDemoActivity;
 
@@ -109,6 +112,12 @@ public class MainActivity extends AppCompatActivity
     CheckBox cbAtvtMainLocation;
     @BindView(R.id.iv_atvt_main_assign_location)
     ImageView ivAtvtMainAssignLocation;
+    @BindView(R.id.et_atvt_main_city)
+    EditText etAtvtMainCity;
+    @BindView(R.id.et_atvt_main_text)
+    EditText etAtvtMainText;
+    @BindView(R.id.tv_atvt_main_search)
+    TextView tvAtvtMainSearch;
 
 
     private TextureMapView mMapView = null;
@@ -147,6 +156,8 @@ public class MainActivity extends AppCompatActivity
     private static final int MAP_STATE_ALL = 1;
     private static final int MAP_STATE_NORMAL = 2;
     private static final int MAP_STATE_POPUP_WINDOW_SHOU = 3;
+    private PoiSearch mPoiSearch;
+    private OnGetPoiSearchResultListener poiListener;
 
 
     @Override
@@ -188,42 +199,109 @@ public class MainActivity extends AppCompatActivity
         // 地图上绘制文字
         addText();
         // 地图poi检索
-        poiSearch();
+//        poiSearch();
 
     }
 
     // 地图poi检索
-    private void poiSearch() {
+    private void poiSearchSet(){
         // 1.创建POI检索实例
-        PoiSearch mPoiSearch = PoiSearch.newInstance();
+        mPoiSearch = PoiSearch.newInstance();
         // 2.创建POI检索监听者；
-        OnGetPoiSearchResultListener poiListener = new OnGetPoiSearchResultListener(){
+        //获取POI检索结果
+//                if (poiAddrInfoList.isEmpty() && poiAddrInfoList.size() > 0){
+//                    Log.e("poiAddrInfoList "," poiAddrInfoList  = "  +  poiResult.getAllAddr().get(0).name  + "   " +
+//                            poiResult.getAllAddr().get(0).address
+//                            + "   "  +  poiResult.getAllAddr().get(0).location  );
+//                }
+//                if (suggestCityList.isEmpty() && suggestCityList.size() > 0 ){
+//                    Log.e("suggestCityList "," suggestCityList  = "  +  poiResult.getSuggestCityList().get(0).city  + "   " +
+//                            poiResult.getSuggestCityList().get(0).describeContents()
+//                            + "   "  +  poiResult.getSuggestCityList().get(0).num  );
+//                }
+        //获取Place详情页检索结果
+        poiListener = new OnGetPoiSearchResultListener() {
             @Override
             public void onGetPoiResult(PoiResult poiResult) {
                 //获取POI检索结果
-                Log.e("onGetPoiResult","POI检索结果  poiResult = " + poiResult);
+                Log.e("onGetPoiResult", "POI检索结果  poiResult = " + poiResult);
+
+                List<PoiInfo> poiInfoList = poiResult.getAllPoi();
+                Log.e("onGetPoiResult", "POI检索结果  poiInfoList = " + poiInfoList);
+                if (poiInfoList != null && poiInfoList.size() > 0) {
+
+                    PoiInfo poiinfo = poiInfoList.get(0);
+                    Log.e("onGetPoiResult", "POI检索结果  describeContents = " + poiinfo.describeContents() +
+                            "  name =  " + poiinfo.name + "  address = " + poiinfo.address + "  city =  " + poiinfo.city + "   " +
+                            "  phoneNum =   " + poiinfo.phoneNum + "  postCode =  " + poiinfo.postCode + "  uid =  " + poiinfo.uid +
+                            "  hasCaterDetails = " + poiinfo.hasCaterDetails + "  isPano = " + poiinfo.isPano + "  location = " + poiinfo.location +
+                            "  type = " + poiinfo.type + "   ");
+
+                    for (int i = 0; i < poiInfoList.size(); i++) {
+                        PoiInfo poiInfo = (PoiInfo) poiInfoList.get(i);
+                        Log.e("poiInfo ", " poiInfo  = " + poiInfo.address + "   " + poiInfo.name);
+                    }
+                }
+
+
+
+                List poiAddrInfoList = poiResult.getAllAddr();
+                Log.e("onGetPoiResult", "POI检索结果  poiAddrInfoList = " + poiAddrInfoList);
+                List suggestCityList = poiResult.getSuggestCityList();
+                Log.e("onGetPoiResult", "POI检索结果  suggestCityList = " + suggestCityList);
+
+//                if (poiAddrInfoList.isEmpty() && poiAddrInfoList.size() > 0){
+//                    Log.e("poiAddrInfoList "," poiAddrInfoList  = "  +  poiResult.getAllAddr().get(0).name  + "   " +
+//                            poiResult.getAllAddr().get(0).address
+//                            + "   "  +  poiResult.getAllAddr().get(0).location  );
+//                }
+//                if (suggestCityList.isEmpty() && suggestCityList.size() > 0 ){
+//                    Log.e("suggestCityList "," suggestCityList  = "  +  poiResult.getSuggestCityList().get(0).city  + "   " +
+//                            poiResult.getSuggestCityList().get(0).describeContents()
+//                            + "   "  +  poiResult.getSuggestCityList().get(0).num  );
+//                }
+
+
             }
 
             @Override
             public void onGetPoiDetailResult(PoiDetailResult poiDetailResult) {
                 //获取Place详情页检索结果
-                Log.e("onGetPoiDetailResult","Place详情页检索结果  poiDetailResult = " + poiDetailResult);
+                Log.e("onGetPoiDetailResult", "Place详情页检索结果  poiDetailResult = " + poiDetailResult.toString());
             }
 
             @Override
             public void onGetPoiIndoorResult(PoiIndoorResult poiIndoorResult) {
-                Log.e("onGetPoiIndoorResult","Indoor POI检索结果  poiIndoorResult = " + poiIndoorResult);
+                Log.e("onGetPoiIndoorResult", "Indoor POI检索结果  poiIndoorResult = " + poiIndoorResult.toString());
             }
         };
         // 3.设置POI检索监听者；
         mPoiSearch.setOnGetPoiSearchResultListener(poiListener);
+    }
+    private void poiSearch() {
+
+
+
         // 4.发起检索请求；
-        mPoiSearch.searchInCity((new PoiCitySearchOption())
-                .city("北京")
-                .keyword("美食")
-                .pageNum(10));
+        if (!TextUtils.isEmpty(etAtvtMainCity.getText().toString().trim()) && !TextUtils.isEmpty(etAtvtMainText.getText().toString().trim())) {
+//            mPoiSearch.searchInCity((new PoiCitySearchOption())
+//                    .city(etAtvtMainCity.getText().toString().trim())
+//                    .keyword(etAtvtMainText.getText().toString().trim())
+//                    .pageNum(10));
+            LatLng center = new LatLng(34.29923570837169,  108.95409189492081);
+            mPoiSearch.searchNearby(new PoiNearbySearchOption()
+                    .keyword(etAtvtMainText.getText().toString().trim())
+                    .sortType(PoiSortType.distance_from_near_to_far)
+                    .location(center)
+                    .radius(100)
+                    .pageNum(10));
+
+
+
+        }
+
         // 5.释放POI检索实例；
-        mPoiSearch.destroy();
+//        mPoiSearch.destroy();
     }
 
     // 地图上绘制文字
@@ -263,6 +341,7 @@ public class MainActivity extends AppCompatActivity
 
 
     }
+
     // 地图上绘制面
     private void drawPlane() {
         // TODO: 2018/3/27 0027 绘制圆
@@ -298,6 +377,7 @@ public class MainActivity extends AppCompatActivity
 
 
     }
+
     // 地图上绘制线
     private void drawLine() {
 
@@ -353,6 +433,7 @@ public class MainActivity extends AppCompatActivity
 
 
     }
+
     // 地图事件
     private void mapEvent() {
 
@@ -366,23 +447,23 @@ public class MainActivity extends AppCompatActivity
             public void onMapClick(LatLng point) {
                 Log.e("onMapClick", "获取到点击坐标 = " + point);
 
-                // 添加地图标点
-                // 定义Maker坐标点
-                LatLng point0 = new LatLng(32.29505308631754, 105.95935596520927);
-                OverlayOptions ooa = new MarkerOptions()
-                        .position(point0)         // 位置
-                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_location_blue))  // 图标
-                        .zIndex(1)        // 设置Marker所在层级
-                        .draggable(true)  // 是否可拖拽
-                        .alpha(0.5f)      // 透明度
-                        .perspective(true)  //   是否开启近大远小效果
-                        .visible(true)      // 是否显示
-                        .title("动态定位")  // 标题
-                        .animateType(MarkerOptions.MarkerAnimateType.drop);  // 添加掉下动画
-
-                marker = (Marker) mBaiduMap.addOverlay(ooa);
-                MapStatusUpdate u = MapStatusUpdateFactory.newLatLngZoom(point0,17.0f);
-                mBaiduMap.animateMapStatus(u);
+//                // 添加地图标点
+//                // 定义Maker坐标点
+//                LatLng point0 = new LatLng(32.29505308631754, 105.95935596520927);
+//                OverlayOptions ooa = new MarkerOptions()
+//                        .position(point0)         // 位置
+//                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_location_blue))  // 图标
+//                        .zIndex(1)        // 设置Marker所在层级
+//                        .draggable(true)  // 是否可拖拽
+//                        .alpha(0.5f)      // 透明度
+//                        .perspective(true)  //   是否开启近大远小效果
+//                        .visible(true)      // 是否显示
+//                        .title("动态定位")  // 标题
+//                        .animateType(MarkerOptions.MarkerAnimateType.drop);  // 添加掉下动画
+//
+//                marker = (Marker) mBaiduMap.addOverlay(ooa);
+//                MapStatusUpdate u = MapStatusUpdateFactory.newLatLngZoom(point0, 17.0f);
+//                mBaiduMap.animateMapStatus(u);
 
             }
 
@@ -495,7 +576,7 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public void onMapStatusChangeStart(MapStatus mapStatus, int i) {
-                Log.e("onMapStatusChangeStart","地图滑动开始 + 2    mapStatus = " + mapStatus  + "    i = " + i);
+                Log.e("onMapStatusChangeStart", "地图滑动开始 + 2    mapStatus = " + mapStatus + "    i = " + i);
             }
 
             @Override
@@ -518,19 +599,19 @@ public class MainActivity extends AppCompatActivity
                     @Override
                     public void onGetReverseGeoCodeResult(ReverseGeoCodeResult reverseGeoCodeResult) {
                         String address = reverseGeoCodeResult.getAddress();
-                        if (!TextUtils.isEmpty(address)){
+                        if (!TextUtils.isEmpty(address)) {
                             latLng = reverseGeoCodeResult.getLocation();
                             String sendAddress = address;
-                            Log.e("onGetReverseGeoCodeResult","地图滑动完成    sendLatLng = " + latLng  + "      address = " + address );
+                            Log.e("onGetReverseGeoCodeResult", "地图滑动完成    sendLatLng = " + latLng + "      address = " + address);
 
                             return;
-                        }else {
-                            Log.e("onGetReverseGeoCodeResult","地图滑动完成    获取地址失败"  );
+                        } else {
+                            Log.e("onGetReverseGeoCodeResult", "地图滑动完成    获取地址失败");
                         }
                     }
                 };
                 geoCoder.setOnGetGeoCodeResultListener(onGetGeoCoderResultListener);
-                Log.e("onMapStatusChangeFinish","地图滑动完成    mapStatus = " + mapStatus );
+                Log.e("onMapStatusChangeFinish", "地图滑动完成    mapStatus = " + mapStatus);
             }
         });
 
@@ -541,10 +622,12 @@ public class MainActivity extends AppCompatActivity
                 //拖拽中
                 Log.e("onMarkerDrag", "拖拽中  marker = " + marker);
             }
+
             public void onMarkerDragEnd(Marker marker) {
                 //拖拽结束
                 Log.e("onMarkerDragEnd", "拖拽结束  marker = " + marker);
             }
+
             public void onMarkerDragStart(Marker marker) {
                 //开始拖拽
                 Log.e("onMarkerDragStart", "开始拖拽  marker = " + marker);
@@ -552,10 +635,8 @@ public class MainActivity extends AppCompatActivity
         });
 
 
-
-
-
     }
+
     // 地图上绘制点标记
     private void dotMark() {
         //定义Maker坐标点
@@ -572,9 +653,8 @@ public class MainActivity extends AppCompatActivity
         mBaiduMap.addOverlay(option);
 
 
-
         //定义Maker坐标点
-        point = new LatLng(34.48498948836416,110.09315226462795);
+        point = new LatLng(34.48498948836416, 110.09315226462795);
         //构建Marker图标
         bitmap = BitmapDescriptorFactory
                 .fromResource(R.drawable.icon_location_red);
@@ -601,9 +681,8 @@ public class MainActivity extends AppCompatActivity
                 .animateType(MarkerOptions.MarkerAnimateType.drop);  // 添加掉下动画
 
         marker = (Marker) mBaiduMap.addOverlay(ooa);
-        MapStatusUpdate u = MapStatusUpdateFactory.newLatLngZoom(point0,17.0f);
+        MapStatusUpdate u = MapStatusUpdateFactory.newLatLngZoom(point0, 17.0f);
         mBaiduMap.animateMapStatus(u);
-
 
 
         // 批量添加地图标点
@@ -614,10 +693,10 @@ public class MainActivity extends AppCompatActivity
         LatLng point2 = new LatLng(39.947246, 116.414977);
 
         //创建OverlayOptions属性
-        OverlayOptions option1 =  new MarkerOptions()
+        OverlayOptions option1 = new MarkerOptions()
                 .position(point1)
                 .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_location_red));
-        OverlayOptions option2 =  new MarkerOptions()
+        OverlayOptions option2 = new MarkerOptions()
                 .position(point2)
                 .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_location_green));
         //将OverlayOptions添加到list
@@ -646,10 +725,11 @@ public class MainActivity extends AppCompatActivity
         // 生长动画
         markerOptions.animateType(MarkerOptions.MarkerAnimateType.grow);
 
-        Marker  mMarkerD = (Marker) (mBaiduMap.addOverlay(markerOptions));
+        Marker mMarkerD = (Marker) (mBaiduMap.addOverlay(markerOptions));
 
 
     }
+
     // 室内地图相关
     private void indoorMap() {
         // 设置监听事件来监听进入和移出室内图：
@@ -666,6 +746,7 @@ public class MainActivity extends AppCompatActivity
             }
         });
     }
+
     // 初始化定位并定位到当前位置
     private void locationMap() {
 
@@ -716,11 +797,13 @@ public class MainActivity extends AppCompatActivity
 
 
     }
+
     // 显示地图
     private void showMap() {
         // 设置地图图层
         mBaiduMap.setMapType(BaiduMap.MAP_TYPE_NORMAL);  // 默认地图（2D，3D ）
     }
+
     // LocationClientOption 配置
     private void initOption() {
         // 定位参数配置
@@ -733,6 +816,7 @@ public class MainActivity extends AppCompatActivity
         option.setIsNeedAddress(true);// 可选，设置是否需要地址信息，默认不需要
         option.setIsNeedLocationPoiList(true);// 可选，默认false，设置是否需要POI结果，可以在BDLocation.getPoiList里得到
     }
+
     // 初始化View
     private void initView() {
         //获取地图控件引用
@@ -863,8 +947,9 @@ public class MainActivity extends AppCompatActivity
 
 
     @OnClick({R.id.tv_atvt_main_heating_power, R.id.iv_atvt_main_location,
-            R.id.tv_atvt_main_traffic1, R.id.tv_atvt_main_one, R.id.tv_atvt_main_two, R.id.tv_atvt_main_three,
-            R.id.tv_atvt_main_four, R.id.tv_atvt_main_heating_five})
+            R.id.tv_atvt_main_traffic1, R.id.tv_atvt_main_one, R.id.tv_atvt_main_two,
+            R.id.tv_atvt_main_three,
+            R.id.tv_atvt_main_four, R.id.tv_atvt_main_heating_five, R.id.tv_atvt_main_search})
     public void onViewClicked(View view) {
         switch (view.getId()) {
             case R.id.tv_atvt_main_heating_power:  // 点及跳转
@@ -895,7 +980,7 @@ public class MainActivity extends AppCompatActivity
                 break;
             case R.id.tv_atvt_main_two:
                 // 移动定位图标至定位点上
-                latLng = new LatLng(34.48498948836416,110.09315226462795);
+                latLng = new LatLng(34.48498948836416, 110.09315226462795);
                 builder = new MapStatus.Builder();
                 builder.target(latLng).zoom(18.0f);
                 mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
@@ -922,6 +1007,10 @@ public class MainActivity extends AppCompatActivity
             case R.id.tv_atvt_main_heating_five:
                 intent = new Intent(MainActivity.this, OverlayDemoActivity.class);
                 startActivity(intent);
+                break;
+
+            case R.id.tv_atvt_main_search:
+                poiSearch();
                 break;
 
 

@@ -18,7 +18,10 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:visibility="visible">
-
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#ffaa00" />
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="30dp"
@@ -287,14 +290,55 @@
     </LinearLayout>
 
     <LinearLayout
-        android:visibility="gone"
-        android:layout_marginTop="24dp"
+        android:visibility="visible"
+        android:layout_marginTop="118dp"
         android:layout_width="match_parent"
-        android:layout_height="45dp"
+        android:layout_height="31dp"
         android:background="#00ff0000"
-        android:orientation="horizontal">
-
+        android:orientation="vertical">
+        <LinearLayout
+            android:layout_marginRight="10dp"
+            android:layout_marginLeft="10dp"
+            android:orientation="horizontal"
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:layout_height="0dp">
+            <EditText
+                android:id="@+id/et_atvt_main_city"
+                android:hint="请输入城市"
+                android:background="@null"
+                android:layout_weight="0.3"
+                android:layout_width="0dp"
+                android:layout_height="match_parent" />
+            <View
+                android:layout_width="2dp"
+                android:layout_height="match_parent"
+                android:background="#ffaa00" />
+            <EditText
+                android:id="@+id/et_atvt_main_text"
+                android:hint="请输入关键字"
+                android:background="@null"
+                android:layout_weight="0.3"
+                android:layout_width="0dp"
+                android:layout_height="match_parent" />
+            <View
+                android:layout_width="2dp"
+                android:layout_height="match_parent"
+                android:background="#ffaa00" />
+            <TextView
+                android:id="@+id/tv_atvt_main_search"
+                android:gravity="center"
+                android:text="搜索"
+                android:layout_weight="0.2"
+                android:layout_width="0dp"
+                android:layout_height="match_parent" />
+        </LinearLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#ffaa00" />
     </LinearLayout>
+
 
     <!-- 地图中心点 -->
     <ImageView
