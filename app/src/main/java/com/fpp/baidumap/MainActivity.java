@@ -29,6 +29,7 @@ import com.baidu.mapapi.map.BitmapDescriptor;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
 import com.baidu.mapapi.map.CircleOptions;
 import com.baidu.mapapi.map.InfoWindow;
+import com.baidu.mapapi.map.LogoPosition;
 import com.baidu.mapapi.map.MapBaseIndoorMapInfo;
 import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapStatus;
@@ -45,7 +46,10 @@ import com.baidu.mapapi.map.PolylineOptions;
 import com.baidu.mapapi.map.Stroke;
 import com.baidu.mapapi.map.TextOptions;
 import com.baidu.mapapi.map.TextureMapView;
+import com.baidu.mapapi.map.UiSettings;
 import com.baidu.mapapi.model.LatLng;
+import com.baidu.mapapi.model.LatLngBounds;
+import com.baidu.mapapi.search.core.CityInfo;
 import com.baidu.mapapi.search.core.PoiInfo;
 import com.baidu.mapapi.search.geocode.GeoCodeResult;
 import com.baidu.mapapi.search.geocode.GeoCoder;
@@ -53,12 +57,20 @@ import com.baidu.mapapi.search.geocode.OnGetGeoCoderResultListener;
 import com.baidu.mapapi.search.geocode.ReverseGeoCodeOption;
 import com.baidu.mapapi.search.geocode.ReverseGeoCodeResult;
 import com.baidu.mapapi.search.poi.OnGetPoiSearchResultListener;
+import com.baidu.mapapi.search.poi.PoiAddrInfo;
+import com.baidu.mapapi.search.poi.PoiBoundSearchOption;
+import com.baidu.mapapi.search.poi.PoiCitySearchOption;
 import com.baidu.mapapi.search.poi.PoiDetailResult;
+import com.baidu.mapapi.search.poi.PoiIndoorInfo;
 import com.baidu.mapapi.search.poi.PoiIndoorResult;
 import com.baidu.mapapi.search.poi.PoiNearbySearchOption;
 import com.baidu.mapapi.search.poi.PoiResult;
 import com.baidu.mapapi.search.poi.PoiSearch;
 import com.baidu.mapapi.search.poi.PoiSortType;
+import com.baidu.mapapi.search.sug.OnGetSuggestionResultListener;
+import com.baidu.mapapi.search.sug.SuggestionResult;
+import com.baidu.mapapi.search.sug.SuggestionSearch;
+import com.baidu.mapapi.search.sug.SuggestionSearchOption;
 import com.fpp.baidumap.activity.NavigationActivity;
 import com.fpp.baidumap.activity.OverlayDemoActivity;
 
@@ -70,6 +82,10 @@ import javax.microedition.khronos.opengles.GL10;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+
+import static android.R.attr.paddingBottom;
+import static android.R.attr.paddingRight;
+import static android.R.attr.paddingTop;
 
 public class MainActivity extends AppCompatActivity
 //        implements BDLocationListener
@@ -158,6 +174,7 @@ public class MainActivity extends AppCompatActivity
     private static final int MAP_STATE_POPUP_WINDOW_SHOU = 3;
     private PoiSearch mPoiSearch;
     private OnGetPoiSearchResultListener poiListener;
+    private SuggestionSearch mSuggestionSearch;
 
 
     @Override
@@ -198,27 +215,22 @@ public class MainActivity extends AppCompatActivity
         drawPlane();
         // 地图上绘制文字
         addText();
-        // 地图poi检索
-//        poiSearch();
+        // 地图poi检索配置
+        poiSearchSet();
 
     }
 
-    // 地图poi检索
+    // 地图poi检索配置
     private void poiSearchSet(){
         // 1.创建POI检索实例
         mPoiSearch = PoiSearch.newInstance();
+
+        // 初始化建议搜索模块，注册建议搜索事件监听
+        mSuggestionSearch = SuggestionSearch.newInstance();
+
         // 2.创建POI检索监听者；
         //获取POI检索结果
-//                if (poiAddrInfoList.isEmpty() && poiAddrInfoList.size() > 0){
-//                    Log.e("poiAddrInfoList "," poiAddrInfoList  = "  +  poiResult.getAllAddr().get(0).name  + "   " +
-//                            poiResult.getAllAddr().get(0).address
-//                            + "   "  +  poiResult.getAllAddr().get(0).location  );
-//                }
-//                if (suggestCityList.isEmpty() && suggestCityList.size() > 0 ){
-//                    Log.e("suggestCityList "," suggestCityList  = "  +  poiResult.getSuggestCityList().get(0).city  + "   " +
-//                            poiResult.getSuggestCityList().get(0).describeContents()
-//                            + "   "  +  poiResult.getSuggestCityList().get(0).num  );
-//                }
+
         //获取Place详情页检索结果
         poiListener = new OnGetPoiSearchResultListener() {
             @Override
@@ -229,7 +241,6 @@ public class MainActivity extends AppCompatActivity
                 List<PoiInfo> poiInfoList = poiResult.getAllPoi();
                 Log.e("onGetPoiResult", "POI检索结果  poiInfoList = " + poiInfoList);
                 if (poiInfoList != null && poiInfoList.size() > 0) {
-
                     PoiInfo poiinfo = poiInfoList.get(0);
                     Log.e("onGetPoiResult", "POI检索结果  describeContents = " + poiinfo.describeContents() +
                             "  name =  " + poiinfo.name + "  address = " + poiinfo.address + "  city =  " + poiinfo.city + "   " +
@@ -245,21 +256,26 @@ public class MainActivity extends AppCompatActivity
 
 
 
-                List poiAddrInfoList = poiResult.getAllAddr();
+                List<PoiAddrInfo> poiAddrInfoList = poiResult.getAllAddr();
                 Log.e("onGetPoiResult", "POI检索结果  poiAddrInfoList = " + poiAddrInfoList);
-                List suggestCityList = poiResult.getSuggestCityList();
+                if (poiAddrInfoList != null && poiAddrInfoList.size() > 0) {
+                    for (int i = 0; i < poiAddrInfoList.size(); i++) {
+                        PoiAddrInfo poiAddrInfo = poiAddrInfoList.get(i);
+                        Log.e("onGetPoiResult", "POI检索结果  location = " + poiAddrInfo.location +
+                                "  name =  " + poiAddrInfo.name +
+                                "  address =  " + poiAddrInfo.name );
+                    }
+                }
+                List<CityInfo> suggestCityList = poiResult.getSuggestCityList();
                 Log.e("onGetPoiResult", "POI检索结果  suggestCityList = " + suggestCityList);
-
-//                if (poiAddrInfoList.isEmpty() && poiAddrInfoList.size() > 0){
-//                    Log.e("poiAddrInfoList "," poiAddrInfoList  = "  +  poiResult.getAllAddr().get(0).name  + "   " +
-//                            poiResult.getAllAddr().get(0).address
-//                            + "   "  +  poiResult.getAllAddr().get(0).location  );
-//                }
-//                if (suggestCityList.isEmpty() && suggestCityList.size() > 0 ){
-//                    Log.e("suggestCityList "," suggestCityList  = "  +  poiResult.getSuggestCityList().get(0).city  + "   " +
-//                            poiResult.getSuggestCityList().get(0).describeContents()
-//                            + "   "  +  poiResult.getSuggestCityList().get(0).num  );
-//                }
+                if (suggestCityList != null && suggestCityList.size() > 0) {
+                    for (int i = 0; i < suggestCityList.size(); i++) {
+                        CityInfo cityInfo = suggestCityList.get(i);
+                        Log.e("onGetPoiResult", "POI检索结果  describeContents = " + cityInfo.describeContents() +
+                                "  num =  " + cityInfo.num +
+                                "  city =  " + cityInfo.city );
+                    }
+                }
 
 
             }
@@ -273,21 +289,65 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onGetPoiIndoorResult(PoiIndoorResult poiIndoorResult) {
                 Log.e("onGetPoiIndoorResult", "Indoor POI检索结果  poiIndoorResult = " + poiIndoorResult.toString());
+                List<PoiIndoorInfo> poiIndoorInfoList = poiIndoorResult.getmArrayPoiInfo();
+                if (poiIndoorInfoList != null && poiIndoorInfoList.size() > 0) {
+                    for (int i = 0; i < poiIndoorInfoList.size(); i++) {
+                        PoiIndoorInfo poiIndoorInfo = (PoiIndoorInfo) poiIndoorInfoList.get(i);
+                        Log.e("onGetPoiResult", "POI检索结果  describeContents = " + poiIndoorInfo.latLng +
+                                "  name =  " + poiIndoorInfo.name + "  address = " + poiIndoorInfo.address +
+                                "  bid =  " + poiIndoorInfo.bid + "   " + "  uid =   " + poiIndoorInfo.uid +
+                                "  cid =  " + poiIndoorInfo.cid + "  floor =  " + poiIndoorInfo.floor +
+                                "  tag = " + poiIndoorInfo.tag + "  isGroup = " + poiIndoorInfo.isGroup +
+                                "  discount = " + poiIndoorInfo.discount + "  groupNum = " + poiIndoorInfo.groupNum +
+                                "  phone =  " + poiIndoorInfo.phone + "  floor =  " + poiIndoorInfo.floor +
+                                "  isTakeOut =  " + poiIndoorInfo.isTakeOut + "  isWaited =  " + poiIndoorInfo.isWaited +
+                                "  price = " + poiIndoorInfo.price + "  starLevel = " + poiIndoorInfo.starLevel );
+                    }
+                }
+            }
+
+
+
+        };
+
+        OnGetSuggestionResultListener onGetSuggestionResultListener = new OnGetSuggestionResultListener() {
+            @Override
+            public void onGetSuggestionResult(SuggestionResult suggestionResult) {
+
             }
         };
+
+
+
         // 3.设置POI检索监听者；
         mPoiSearch.setOnGetPoiSearchResultListener(poiListener);
+        mSuggestionSearch.setOnGetSuggestionResultListener(onGetSuggestionResultListener);
+
     }
-    private void poiSearch() {
+    // 条件搜索
+    private void poiConditionSearch() {
+        // 4.发起检索请求；
+        if (!TextUtils.isEmpty(etAtvtMainCity.getText().toString().trim()) && !TextUtils.isEmpty(etAtvtMainText.getText().toString().trim())) {
+            mPoiSearch.searchInCity((new PoiCitySearchOption())
+                    .city(etAtvtMainCity.getText().toString().trim())
+                    .keyword(etAtvtMainText.getText().toString().trim())
+                    .pageNum(10));
+            /**
+             * 使用建议搜索服务获取建议列表，结果在onSuggestionResult()中更新
+             */
+            mSuggestionSearch.requestSuggestion((new SuggestionSearchOption())
+                    .keyword(etAtvtMainText.getText().toString())        // 搜索关键字
+                    .city(etAtvtMainCity.getText().toString()));  // 搜索城市
+
+        }
 
 
+    }
+    // 周边搜索
+    private void poiAmbitusSearch() {
 
         // 4.发起检索请求；
         if (!TextUtils.isEmpty(etAtvtMainCity.getText().toString().trim()) && !TextUtils.isEmpty(etAtvtMainText.getText().toString().trim())) {
-//            mPoiSearch.searchInCity((new PoiCitySearchOption())
-//                    .city(etAtvtMainCity.getText().toString().trim())
-//                    .keyword(etAtvtMainText.getText().toString().trim())
-//                    .pageNum(10));
             LatLng center = new LatLng(34.29923570837169,  108.95409189492081);
             mPoiSearch.searchNearby(new PoiNearbySearchOption()
                     .keyword(etAtvtMainText.getText().toString().trim())
@@ -296,12 +356,20 @@ public class MainActivity extends AppCompatActivity
                     .radius(100)
                     .pageNum(10));
 
-
-
         }
 
-        // 5.释放POI检索实例；
-//        mPoiSearch.destroy();
+    }
+    // 矩形搜索
+    private void poiRectangleSearch() {
+        // 4.发起检索请求；
+        LatLng southwest = new LatLng( 39.92235, 116.380338 );
+        LatLng northeast = new LatLng( 39.947246, 116.414977);
+        LatLngBounds searchbound = new LatLngBounds.Builder()
+                .include(southwest).include(northeast)
+                .build();
+        mPoiSearch.searchInBound(new PoiBoundSearchOption().bound(searchbound)
+                .keyword("餐厅"));
+
     }
 
     // 地图上绘制文字
@@ -837,6 +905,37 @@ public class MainActivity extends AppCompatActivity
         cbAtvtMainCompass.setOnCheckedChangeListener(onCheckedChangeListener);
         cbAtvtMainLocation.setOnCheckedChangeListener(onCheckedChangeListener);
 
+        mMapView.setLogoPosition(LogoPosition.logoPostionleftBottom);
+        // 地图Logo不允许遮挡，可通过以下方法可以设置地图边界区域，来避免UI遮挡。
+
+        mBaiduMap.setPadding(10, paddingTop, paddingRight, paddingBottom);
+        // 其中参数paddingLeft、paddingTop、paddingRight、paddingBottom参数表示距离屏幕边框的左、上、
+        // 右、下边距的距离，单位为屏幕坐标的像素密度。
+
+        // 指南针
+
+        //指南针默认为开启状态，可以关闭显示 。设置方法如下：
+
+        UiSettings mUiSettings = mBaiduMap.getUiSettings();
+        //  实例化UiSettings类对象 mUiSettings.setCompassEnabled(enable);
+        mUiSettings.setCompassEnabled(false);
+
+        // 比例尺
+
+        // 比例尺默认为开启状态，可以关闭显示。设置方法如下：
+
+        mMapView. showScaleControl(true);
+        // 同时支持设置MaxZoomLevel和minZoomLevel，方法为：
+
+//        mBaiduMap.setMaxAndMinZoomLevel(float max, float min);
+        // 另外，可通过mMapView.getMapLevel获取当前地图级别下比例尺所表示的距离大小。
+
+      //  缩放按钮
+
+        // 通过如下方式控制缩放按钮是否显示：
+        //mMapView. showZoomControls(enable)；
+
+
 
     }
 
@@ -927,8 +1026,11 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // 5.释放POI检索实例；
+        mPoiSearch.destroy();
         //在activity执行onDestroy时执行mMapView.onDestroy()，实现地图生命周期管理
         mMapView.onDestroy();
+
     }
 
     @Override
@@ -1010,7 +1112,7 @@ public class MainActivity extends AppCompatActivity
                 break;
 
             case R.id.tv_atvt_main_search:
-                poiSearch();
+                poiConditionSearch();
                 break;
 
 

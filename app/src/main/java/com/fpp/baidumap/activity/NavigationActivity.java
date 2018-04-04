@@ -1,11 +1,14 @@
 package com.fpp.baidumap.activity;
 
 import android.app.Activity;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -16,11 +19,16 @@ import com.baidu.location.LocationClientOption;
 import com.baidu.mapapi.SDKInitializer;
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.BitmapDescriptor;
+import com.baidu.mapapi.map.BitmapDescriptorFactory;
+import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapStatus;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
+import com.baidu.mapapi.map.Marker;
+import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationConfiguration.LocationMode;
 import com.baidu.mapapi.map.MyLocationData;
+import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.map.TextureMapView;
 import com.baidu.mapapi.model.LatLng;
 import com.baidu.mapapi.search.core.RouteLine;
@@ -60,9 +68,19 @@ public class NavigationActivity extends Activity
     // 定位相关
     LocationClient mLocClient;
     public MyLocationListener myListener = new MyLocationListener();
+    private Marker marker;
+    private RelativeLayout mRlPoiMessage;
+    private TextView mTvPoiName;
+    private TextView mTvPoiAddress;
+    private TextView mTvPoiDistance;
+    private TextView mTvPoiGoToHere;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // 状态栏标识颜色变黑
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        }
         // 在使用SDK各组件之前初始化context信息，传入ApplicationContext
         // 注意该方法要再setContentView方法之前实现
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);// 设置标题栏不可用
@@ -77,6 +95,55 @@ public class NavigationActivity extends Activity
         // 初始化地图
         inintmap();
         initview();
+        initEvent();
+
+    }
+
+    private void initEvent() {
+        // TODO: 2018/3/27 0027 地图单击事件
+        mBaidumap.setOnMapClickListener(new BaiduMap.OnMapClickListener() {
+            /**
+             * 地图单击事件回调函数
+             * @param point 点击的地理坐标
+             */
+            public void onMapClick(LatLng point) {
+                Log.e("onMapClick", "获取到点击坐标 = " + point);
+            }
+
+            /**
+             * 地图内 Poi 单击事件回调函数
+             * @param poi 点击的 poi 信息
+             */
+            public boolean onMapPoiClick(MapPoi poi) {
+                Log.e("onMapPoiClick", " name = " + poi.getName()
+                        + "   uid = " + poi.getUid() + "   latlng = " + poi.getPosition());
+                mBaidumap.clear();
+                // 添加地图标点
+                // 定义Maker坐标点
+                LatLng point0 = poi.getPosition();
+                OverlayOptions ooa = new MarkerOptions()
+                        .position(point0)         // 位置
+                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_location_green))  // 图标
+                        .zIndex(1)        // 设置Marker所在层级
+                        .draggable(true)  // 是否可拖拽
+                        .alpha(1.0f)      // 透明度
+                        .perspective(true)  //   是否开启近大远小效果
+                        .visible(true)      // 是否显示
+                        .title(poi.getName())  // 标题
+                        .animateType(MarkerOptions.MarkerAnimateType.grow);  // 添加冒出动画
+
+                marker = (Marker) mBaidumap.addOverlay(ooa);
+                // 地图标注物信息设置
+                if (mRlPoiMessage.getVisibility() == View.GONE){
+                    mRlPoiMessage.setVisibility(View.VISIBLE);
+                }
+
+                mTvPoiName.setText(poi.getName());
+                // TODO: 2018/4/4 0004 点击地图标识物显示其信息。 
+
+                return true;
+            }
+        });
 
     }
 
@@ -116,6 +183,17 @@ public class NavigationActivity extends Activity
 
     public void initview() {
         driver_city = (TextView) findViewById(R.id.driver_city);
+        mRlPoiMessage = (RelativeLayout) findViewById(R.id.rl_poi_message);
+        mTvPoiName = (TextView) findViewById(R.id.tv_poi_name);
+        mTvPoiAddress = (TextView) findViewById(R.id.tv_poi_address);
+        mTvPoiDistance = (TextView) findViewById(R.id.tv_poi_distance);
+        mTvPoiGoToHere = (TextView) findViewById(R.id.tv_poi_gotohere);
+        mTvPoiGoToHere.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // TODO: 2018/4/4 0004 点击进行路径设置
+            }
+        });
     }
 
 
