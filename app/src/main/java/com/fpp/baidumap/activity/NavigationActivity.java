@@ -51,16 +51,20 @@ import com.baidu.mapapi.model.LatLngBounds;
 import com.baidu.mapapi.search.core.RouteLine;
 import com.baidu.mapapi.search.core.SearchResult;
 import com.baidu.mapapi.search.route.BikingRouteLine;
+import com.baidu.mapapi.search.route.BikingRoutePlanOption;
 import com.baidu.mapapi.search.route.BikingRouteResult;
 import com.baidu.mapapi.search.route.DrivingRouteLine;
+import com.baidu.mapapi.search.route.DrivingRoutePlanOption;
 import com.baidu.mapapi.search.route.DrivingRouteResult;
 import com.baidu.mapapi.search.route.IndoorRouteResult;
 import com.baidu.mapapi.search.route.MassTransitRouteLine;
+import com.baidu.mapapi.search.route.MassTransitRoutePlanOption;
 import com.baidu.mapapi.search.route.MassTransitRouteResult;
 import com.baidu.mapapi.search.route.OnGetRoutePlanResultListener;
 import com.baidu.mapapi.search.route.PlanNode;
 import com.baidu.mapapi.search.route.RoutePlanSearch;
 import com.baidu.mapapi.search.route.TransitRouteLine;
+import com.baidu.mapapi.search.route.TransitRoutePlanOption;
 import com.baidu.mapapi.search.route.TransitRouteResult;
 import com.baidu.mapapi.search.route.WalkingRouteLine;
 import com.baidu.mapapi.search.route.WalkingRoutePlanOption;
@@ -117,8 +121,8 @@ public class NavigationActivity extends Activity
     RelativeLayout driverbLayout;
     @BindView(R.id.et_start_address)
     EditText etStartAddress;
-    @BindView(R.id.id_finish_green)
-    EditText idFinishGreen;
+    @BindView(R.id.et_finish_address)
+    EditText etFinishAddress;
     @BindView(R.id.iv_swap_calls)
     ImageView ivSwapCalls;
     @BindView(R.id.tv_search)
@@ -175,6 +179,8 @@ public class NavigationActivity extends Activity
     private TextView mTvPoiDistance;
     private TextView mTvPoiGoToHere;
     private OnGetRoutePlanResultListener onGetRoutePlanResultListener;
+    private PlanNode stNode;
+    private PlanNode enNode;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -761,6 +767,11 @@ public class NavigationActivity extends Activity
         mBtnPre = (Button) findViewById(R.id.pre);
         mBtnNext = (Button) findViewById(R.id.next);
 
+        // 处理搜索按钮响应
+        // 设置起终点信息，对于tranist search 来说，城市名无意义
+        stNode = PlanNode.withCityNameAndPlaceName("济宁", startNodeStr);
+        enNode = PlanNode.withCityNameAndPlaceName("济宁", endNodeStr);
+
         mTvPoiGoToHere.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -770,39 +781,17 @@ public class NavigationActivity extends Activity
                 mBtnPre.setVisibility(View.INVISIBLE);
                 mBtnNext.setVisibility(View.INVISIBLE);
                 mBaidumap.clear();
-                // 处理搜索按钮响应
-                // 设置起终点信息，对于tranist search 来说，城市名无意义
-                PlanNode stNode = PlanNode.withCityNameAndPlaceName("济宁", startNodeStr);
-                PlanNode enNode = PlanNode.withCityNameAndPlaceName("济宁", endNodeStr);
+
 
                 // 实际使用中请对起点终点城市进行正确的设定
 
                 mSearch = RoutePlanSearch.newInstance();
                 mSearch.setOnGetRoutePlanResultListener(onGetRoutePlanResultListener);
 
-//                if (v.getId() == R.id.mass) {
-//                    PlanNode stMassNode = PlanNode.withCityNameAndPlaceName("北京", "天安门");
-//                    PlanNode enMassNode = PlanNode.withCityNameAndPlaceName("上海", "东方明珠");
-//
-//                    mSearch.masstransitSearch(new MassTransitRoutePlanOption().from(stMassNode).to(enMassNode));
-//                    nowSearchType = 0;
-//                } else if (v.getId() == R.id.drive) {
-//                    mSearch.drivingSearch((new DrivingRoutePlanOption())
-//                            .from(stNode).to(enNode));
-//                    nowSearchType = 1;
-//                } else if (v.getId() == R.id.transit) {
-//                    mSearch.transitSearch((new TransitRoutePlanOption())
-//                            .from(stNode).city("北京").to(enNode));
-//                    nowSearchType = 2;
-//                } else if (v.getId() == R.id.walk) {
                 mSearch.walkingSearch((new WalkingRoutePlanOption())
                         .from(stNode).to(enNode));
                 nowSearchType = 3;
-//                } else if (v.getId() == R.id.bike) {
-//                    mSearch.bikingSearch((new BikingRoutePlanOption())
-//                            .from(stNode).to(enNode));
-//                    nowSearchType = 4;
-//                }
+
             }
         });
     }
@@ -868,16 +857,32 @@ public class NavigationActivity extends Activity
     public void onViewClicked(View view) {
         switch (view.getId()) {
             case R.id.iv_swap_calls:
+                PlanNode stMassNode = PlanNode.withCityNameAndPlaceName("北京", "天安门");
+                PlanNode enMassNode = PlanNode.withCityNameAndPlaceName("上海", "东方明珠");
+                mSearch.masstransitSearch(new MassTransitRoutePlanOption().from(stMassNode).to(enMassNode));
+                nowSearchType = 0;
                 break;
             case R.id.tv_search:
                 break;
             case R.id.iv_car:
+                mSearch.drivingSearch((new DrivingRoutePlanOption())
+                        .from(stNode).to(enNode));
+                nowSearchType = 1;
                 break;
             case R.id.iv_bus:
+                mSearch.transitSearch((new TransitRoutePlanOption())
+                        .from(stNode).city("济宁").to(enNode));
+                nowSearchType = 2;
                 break;
             case R.id.iv_walk:
+                mSearch.walkingSearch((new WalkingRoutePlanOption())
+                        .from(stNode).to(enNode));
+                nowSearchType = 3;
                 break;
             case R.id.iv_bike:
+                mSearch.bikingSearch((new BikingRoutePlanOption())
+                        .from(stNode).to(enNode));
+                nowSearchType = 4;
                 break;
         }
     }
